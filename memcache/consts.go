@@ -1,28 +1,38 @@
 package memcache
 
-const INVAILD = "invaild"
+const NormalReaderSize = 10
+
 const (
-    CliErr = "CLIENT_ERROR"
-    SrvErr = "SERVER_ERROR"
-    CommonErr = "ERROR"
+	FlushAllLen = 1
+	DelDelayLen = 3
+	DelNowLen = 2
+	StoreLen = 5
+	GetLen = 2
 )
 
 const (
-    NotStored = "NOT_STORED"
-    NotFound = "NOT_FOUND"
-    Deleted = "DELETED"
-    Stored = "STORED"
-    Value = "VALUE"
-    End = "END"
-    OK = "OK"
-    CRLF = "\r\n"
+	CliErr = "CLIENT_ERROR"
+	SrvErr = "SERVER_ERROR"
+	CommonErr = "ERROR"
+)
+
+const (
+	NotStored = "NOT_STORED"
+	NotFound = "NOT_FOUND"
+	Invaild = "invaild"
+	Deleted = "DELETED"
+	Stored = "STORED"
+	Value = "VALUE"
+	End = "END"
+	OK = "OK"
+	CRLF = "\r\n"
 )
 
 const (
 	FLUSH_ALL = "flush_all"
-    REPLACE = "replace"
-    DELETE = "delete"
-    SET = "set"
-    ADD = "add"
-    GET = "get"
+	REPLACE = "replace"
+	DELETE = "delete"
+	SET = "set"
+	ADD = "add"
+	GET = "get"
 )

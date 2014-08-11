@@ -2,22 +2,24 @@ package memcache
 
 import (
 	"net"
-//	"log"
+	"log"
 )
 
-func Handler(conn net.Conn, data map[string]string, expir map[string]int64) error {
-	req, _ := ReadData(conn, data, expir)
-	rsp := new(Response)
+func Handler(conn net.Conn, data map[string][]byte, expir map[string]int64) {
+	req := Request{}
+	err_read := req.ReadData(conn, data, expir)
+	if err_read != nil {
+		log.Println("read data from client failed:", err_read)
+	}
+
+	rsp := Response{}
 	rsp.cmd = req.cmd
-	rsp.keys = req.keys
+	rsp.key = req.key
 	rsp.value = req.value
 	rsp.result = req.result
-//	log.Println("req: ", req)
-//	log.Println("rsp: ", rsp)
-//	log.Println("data: ", data)
-	err := rsp.WriteData(conn)
-	if err != nil {
-		return err	
+	err_write := rsp.WriteData(conn)
+	if err_write != nil {
+		log.Println("write data to client failed:", err_write)
 	}
-	return err	
-} 
+	return
+}
