@@ -1,6 +1,6 @@
 package memcache
 
-const NormalReaderSize = 10
+const NormalReaderSize = 4096
 
 const (
 	FlushAllLen = 1
