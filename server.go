@@ -14,14 +14,20 @@ func main() {
 
 	data := make(map[string][]byte)
 	expir := make(map[string]int64)
+	
+	datachan := make(chan *memcache.Request)
+	go memcache.SyncData(datachan, data)
 
+	expirchan := make(chan *memcache.Request)
+	go memcache.ExpirData(datachan, expirchan, expir)
+	
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			panic("accept err:"+err.Error())
 		}
 		log.Printf("accept connection: %s", conn.RemoteAddr())
-
-		go memcache.Handler(conn, data, expir)
+	
+		go memcache.Handler(conn, datachan, expirchan)
 	}
 }
