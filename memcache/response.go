@@ -9,7 +9,6 @@ type Response struct {
 	cmd string
 	key string
 	value []byte
-	length int
 	result string
 }
 

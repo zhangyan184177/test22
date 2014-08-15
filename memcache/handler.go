@@ -5,27 +5,14 @@ import (
 	"log"
 	"time"
 )
-type Request struct {
-	cmd string
-	key string
-	value []byte
-	length int
-	result string
-	delay int64
-	interval int64
-	delayflag bool
-	intervalflag bool
-	clientchan chan bool
-}
 
-func Handler(conn net.Conn, datachan chan *Request,
-								expirchan chan *Request) {
+func Handler(conn net.Conn, datachan chan *Request) {
 	req := Request{}
-	req.clientchan = make(chan bool)
-	err_read := req.ReadData(conn, datachan, expirchan)
+	err_read := req.ReadData(conn)
 	if err_read != nil {
 		log.Println("read data from client failed:", err_read)
 	}
+	operatemap(&req, datachan)
 
 	rsp := Response{}
 	rsp.cmd = req.cmd
@@ -39,84 +26,68 @@ func Handler(conn net.Conn, datachan chan *Request,
 	return
 }
 
-func SyncData(datachan chan *Request, data map[string][]byte) {
-	log.Println("sync")
+func operatemap(req *Request, datachan chan *Request) {
+	datachan <- req
+	<-req.clientchan
+}
+
+func SyncData(datachan chan *Request, data map[string][]byte,
+									expir map[string]int64) {
 	for {
 		req := <-datachan
 		switch req.cmd {
 			case SET, ADD, REPLACE:
-				if req.intervalflag {
-					delete(data, req.key)
-					break
+				_, exist := data[req.key]
+				if req.cmd == ADD && exist == true ||
+						req.cmd == REPLACE && exist == false {
+					req.result = NotStored
+					log.Println("add a exised key"+
+							" or replace a not exised key")
 				} else {
-					_, exist := data[req.key]
-					if req.cmd == ADD && exist == true ||
-							req.cmd == REPLACE && exist == false {
-						req.result = NotStored
-						log.Println("add a exised key"+
-								" or replace a not exised key")
-					} else {
-						data[req.key] = req.value
-						req.result = Stored
+					if req.interval != 0 {
+						updateexpir(expir, req.interval, req.key)
 					}
-					req.clientchan <- true
+					data[req.key] = req.value
+					req.result = Stored
 				}
 			case GET:
+				now := time.Now().Unix()
 				_, exist := data[req.key]
-				if exist == false {
+				if exist == false || expir[req.key] != 0 && now >= expir[req.key] {
 					req.result = NotFound
 					log.Println("get a not exised key")
 				} else {
 					req.value = data[req.key]
 				}
-				req.clientchan <- true
 			case DELETE:
-				if req.delayflag {
-					delete(data, req.key)
-					break
+				_, exist := data[req.key]
+				if exist == false {
+					req.result = NotFound
+					log.Println("delete a not exised key")
 				} else {
-					_, exist := data[req.key]
-					if exist == false {
-						req.result = NotFound
-						log.Println("delete a not exised key")
-					} else {
-						delete(data, req.key)
-						req.result = Deleted
+					if req.delay != 0 {
+						updateexpir(expir, req.delay, req.key)
 					}
-					req.clientchan <- true
+					delete(data, req.key)
+					req.result = Deleted
 				}
 			case FLUSH_ALL:
 				for i, _ := range data {
 					delete(data, i)
 				}
 				req.result = OK
-				req.clientchan <- true
 		}
+		req.clientchan <- true
 	}
 }
 
-func ExpirData(datachan chan *Request,
-		expirchan chan *Request, expir map[string]int64 ) {
-	for {
-		req := <-expirchan
-		now := time.Now()
-		expir_time := now.Add(time.Duration(req.interval) * time.Second)
-		tmp_time := time.Date(expir_time.Year(), expir_time.Month(),
-				expir_time.Day(), expir_time.Hour(), expir_time.Minute(),
-								expir_time.Second(), 0, time.Local)
-		save_time := tmp_time.Unix()
-		if req.interval != 0 && save_time > expir[req.key] {
-				expir[req.key] = save_time
-				go func() {
-					expir_timer :=
-						time.NewTimer(time.Duration(req.interval) * time.Second)
-					<-expir_timer.C
-					now := time.Now().Unix()
-					if now >= expir[req.key] {
-						req.intervalflag = true
-						datachan <- req
-					}
-				}()
-		}
+func updateexpir(expir map[string]int64, intertime int64, key string) {
+	now := time.Now()
+	expir_time := now.Add(time.Duration(intertime) * time.Second)
+	expir_time = time.Date(expir_time.Year(), expir_time.Month(),
+			expir_time.Day(), expir_time.Hour(), expir_time.Minute(),
+					expir_time.Second(), 0, time.Local)
+	if expir_time.Unix() > expir[key] {
+		expir[key] = expir_time.Unix()
 	}
 }
