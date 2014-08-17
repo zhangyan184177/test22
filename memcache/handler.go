@@ -7,12 +7,14 @@ import (
 )
 
 func Handler(conn net.Conn, datachan chan *Request) {
+/*	
 	req := Request{}
 	err_read := req.ReadData(conn)
 	if err_read != nil {
 		log.Println("read data from client failed:", err_read)
 	}
 	operatemap(&req, datachan)
+
 
 	rsp := Response{}
 	rsp.cmd = req.cmd
@@ -23,12 +25,78 @@ func Handler(conn net.Conn, datachan chan *Request) {
 	if err_write != nil {
 		log.Println("write data to client failed:", err_write)
 	}
+	*/
+	SyncData(makeARequest(con))
 	return
 }
 
 func operatemap(req *Request, datachan chan *Request) {
 	datachan <- req
 	<-req.clientchan
+}
+
+/*
+返回内存数据map
+*/
+func getKVMap() {
+	return /**/;
+}
+
+/*
+返回内存数据过期时间map
+*/
+func getKVMapExpire() {
+	return /**/;
+}
+
+const MAP_SET = 0;
+const MAP_GET = 1;
+const MAP_DELETE = 2;
+
+func getMapChan() chan []string {
+	return /* 全局访问map的chan */;
+}
+
+type MapUpdateRequest struct {
+	params []string
+	op int
+	wake chan bool
+}
+
+var gMapUpdateChan
+
+func InitMapUpdateRequestChan () {
+	gMapUpdateChan = make (chan *MapUpdateRequest);
+	go UpdateMap();
+}
+
+func getMapUpdateRequestChan () {
+	return gMapUpdateChan;
+}
+
+func makeMapUpdateRequest (req *Request) {
+	/* 解析协议 */
+	return new(MapUpdateRequest);
+}
+
+/* 封装 KVMap */
+func UpdateMap() {
+	/* getKVMap */
+	for {
+		req := <- getMapUpdateRequestChan()
+		switch (req.op) {
+		case MAP_SET:
+		case MAP_GET:
+		case MAP_DELETE:
+		}
+		req.bool <- true
+	}
+}
+
+func SyncData(req *Request) {
+	updateMakeRequest = makeMapUpdateRequest(req);
+	getMapUpdateRequestChan() <- updateMakeRequest
+	ret = <- updateMakeRequest.wake
 }
 
 func SyncData(datachan chan *Request, data map[string][]byte,

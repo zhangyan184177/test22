@@ -9,6 +9,7 @@ import (
 )
 
 type Request struct {
+	params []string
 	cmd string
 	key string
 	delay int64
@@ -35,6 +36,7 @@ func (req *Request) ReadData(read io.Reader) error {
 		req.result = Invaild
 		return errors.New("lack of instruction")
 	}
+	req.params = params
 	req.cmd = params[0]
 	switch req.cmd {
 		case SET, ADD, REPLACE:

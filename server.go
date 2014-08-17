@@ -16,7 +16,7 @@ func main() {
 	expir := make(map[string]int64)
 	
 	datachan := make(chan *memcache.Request)
-	go memcache.SyncData(datachan, data, expir)
+	memcache.InitMapUpdateRequest();
 	
 	for {
 		conn, err := ln.Accept()
