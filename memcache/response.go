@@ -10,50 +10,36 @@ type Response struct {
 	key string
 	value []byte
 	result string
+	params []byte
 }
 
-func (rsp *Response) Write(writer io.Writer) error {
+func (rsp *Response) DealProtocol() {
+	var s []byte
 	if rsp.result == Invaild {
-		clierrs := []byte(CliErr + CRLF)
-		err := doWrite(writer, clierrs)
-		if err != nil {
-			return err
-		}
+		s = []byte(CliErr + CRLF)
 	}
 
 	switch rsp.cmd {
 		case SET, ADD, REPLACE, DELETE, FLUSH_ALL:
-			sets := []byte(rsp.result + CRLF)
-			err := doWrite(writer, sets)
-			if err != nil {
-				return err
-			}
+			s = []byte(rsp.result + CRLF)
 		case GET:
-			s := ""
+			gets := ""
 			if rsp.result != NotFound {
-				s = fmt.Sprintf(" %s %s %d", rsp.key, string(rsp.value), len(rsp.value))
-				s = Value + s + CRLF
+				gets = fmt.Sprintf(" %s %s %d", rsp.key, string(rsp.value), len(rsp.value))
+				gets = Value + gets + CRLF
 			}
-			gets := []byte(s)
-			err := doWrite(writer, gets)
-			if err != nil {
-				return err
-			}
+			s = []byte(gets)
 		default:
-			errs := []byte(CliErr + CRLF)
-			err := doWrite(writer, errs)
-			if err != nil {
-				return err
-			}
+			s = []byte(CliErr + CRLF)
 	}
-	return nil
+	rsp.params = s
 }
 
-func doWrite(writer io.Writer, s []byte) error {
+func (rsp *Response)Write(writer io.Writer) error {
 	var err error
 	var line int
-	for begin := 0; line < len(s[begin:]); begin = line {
-		line, err = writer.Write(s[begin:])
+	for begin := 0; line < len(rsp.params[begin:]); begin = line {
+		line, err = writer.Write(rsp.params[begin:])
 		if err != nil {
 			return err
 		}

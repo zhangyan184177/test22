@@ -12,12 +12,10 @@ func Handler(conn net.Conn, datachan chan *Request) {
 	if err != nil {
 		log.Println("read data from client failed:", err)
 	}
-
 	err =  req.DealProtocol()
 	if err != nil {
-		log.Println("deal with protocol failed:", err)
+		log.Println("req deal with protocol failed:", err)
 	}
-
 	req.OperateMap(datachan)
 
 	rsp := Response{}
@@ -25,6 +23,8 @@ func Handler(conn net.Conn, datachan chan *Request) {
 	rsp.key = req.key
 	rsp.value = req.value
 	rsp.result = req.result
+	
+	rsp.DealProtocol()
 	err = rsp.Write(conn)
 	if err != nil {
 		log.Println("write data to client failed:", err)

@@ -15,7 +15,7 @@ type Request struct {
 	value []byte
 	result string
 	interval int64
-	params  []string
+	params []string
 	clientchan chan bool
 }
 
