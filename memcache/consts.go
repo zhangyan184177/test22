@@ -29,7 +29,7 @@ const (
 )
 
 const (
-	DEL_EXPIR = "del_expir"
+//	DEL_EXPIR = "del_expir"
 	FLUSH_ALL = "flush_all"
 	REPLACE = "replace"
 	DELETE = "delete"

@@ -79,8 +79,8 @@ func SyncData(datachan chan *Request, data map[string][]byte,
 					delete(data, i)
 				}
 				req.result = OK
-			case DEL_EXPIR:
-				delete(data, req.key)
+//			case DEL_EXPIR:
+//				delete(data, req.key)
 		}
 		req.clientchan <- true
 	}
