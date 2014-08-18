@@ -55,6 +55,7 @@ func SyncData(datachan chan *Request, data map[string][]byte,
 				now := time.Now().Unix()
 				_, exist := data[req.key]
 				if exist == false || expir[req.key] != 0 && now >= expir[req.key] {
+					delete(data, req.key)
 					req.result = NotFound
 					log.Println("get a not exised key")
 				} else {
@@ -78,6 +79,8 @@ func SyncData(datachan chan *Request, data map[string][]byte,
 					delete(data, i)
 				}
 				req.result = OK
+			case DEL_EXPIR:
+				delete(data, req.key)
 		}
 		req.clientchan <- true
 	}
@@ -93,3 +96,20 @@ func updateExpir(expir map[string]int64, intertime int64, key string) {
 		expir[key] = expir_time.Unix()
 	}
 }
+//
+//func DelExpir(datachan chan *Request, expir map[string]int64) {
+//	virReq := Request{}
+//	virReq.cmd = DEL_EXPIR
+//	ticker := time.NewTicker(time.Second * 5)
+//	go func() {
+//		for _ = range ticker.C {
+//			now := time.Now().Unix()
+//			for key, expir := range expir {
+//				if now > expir {
+//					virReq.key = key
+//					virReq.OperateMap(datachan)
+//				}
+//			}
+//		}
+//	}()
+//}

@@ -17,6 +17,7 @@ func main() {
 	
 	datachan := make(chan *memcache.Request)
 	go memcache.SyncData(datachan, data, expir)
+//	go memcache.DelExpir(datachan, expir)
 	
 	for {
 		conn, err := ln.Accept()
