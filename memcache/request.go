@@ -15,10 +15,11 @@ type Request struct {
 	value []byte
 	result string
 	interval int64
+	params  []string
 	clientchan chan bool
 }
 
-func (req *Request) ReadData(read io.Reader) error {
+func (req *Request) Read(read io.Reader) error {
 	req.clientchan = make(chan bool)
 	reader := bufio.NewReaderSize(read, NormalReaderSize)
 	line, err := reader.ReadBytes('\n')
@@ -35,38 +36,48 @@ func (req *Request) ReadData(read io.Reader) error {
 		req.result = Invaild
 		return errors.New("lack of instruction")
 	}
-	req.cmd = params[0]
+	req.params = params
+	return err
+}
+
+func (req *Request) DealProtocol() error {
+	req.cmd = req.params[0]
 	switch req.cmd {
 		case SET, ADD, REPLACE:
-			if len(params) != StoreLen {
+			if len(req.params) != StoreLen {
 				req.result = Invaild
 				return errors.New("commond format of store is wrong")
 			}
-			req.key = params[1]
-			req.value = []byte(params[2])
-			req.interval, _ = strconv.ParseInt(params[3], 10, 64)
+			req.key = req.params[1]
+			req.value = []byte(req.params[2])
+			req.interval, _ = strconv.ParseInt(req.params[3], 10, 64)
 		case GET:
-			if len(params) != GetLen {
+			if len(req.params) != GetLen {
 				req.result = Invaild
 				return errors.New("commond format of get is wrong")
 			}
-			req.key = params[1]
+			req.key = req.params[1]
 		case DELETE:
-			if len(params) != DelNowLen && len(params) != DelDelayLen {
+			if len(req.params) != DelNowLen && len(req.params) != DelDelayLen {
 				req.result = Invaild
 				return errors.New("commond format of delete is wrong")
 			}
-			req.key = params[1]
-			if len(params) == DelDelayLen {
-				req.delay, _ = strconv.ParseInt(params[2], 10, 64)
+			req.key = req.params[1]
+			if len(req.params) == DelDelayLen {
+				req.delay, _ = strconv.ParseInt(req.params[2], 10, 64)
 			}
 		case FLUSH_ALL:
-			if len(params) != FlushAllLen {
+			if len(req.params) != FlushAllLen {
 				req.result = Invaild
 				return errors.New("commond format of flush_all is wrong")
 			}
 		default:
 			return errors.New("cmd is invaild")
 	}
-	return err
+	return nil
+}
+
+func (req *Request)OperateMap(datachan chan *Request) {
+	datachan <- req
+	<-req.clientchan
 }
